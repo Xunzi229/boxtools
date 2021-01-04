@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bmarks/lib"
+	"boxtools/tools/bmarks/lib"
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"log"
