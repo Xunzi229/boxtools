@@ -3,10 +3,11 @@ package main
 import (
 	"boxtools/tools/bmarks/lib"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
 var app = &cli.App{}
@@ -22,7 +23,7 @@ func init() {
 				Value:       "chrome",
 				Destination: &browser,
 				Aliases:     []string{"b"},
-				Usage:       "选择浏览器 (chrome/edge). \n Default: chrome",
+				Usage:       "选择浏览器 (chrome/edge/yandex). \n Default: chrome",
 			},
 		},
 		Authors: []*cli.Author{
@@ -40,7 +41,7 @@ func init() {
 	}
 }
 
-func main()  {
+func main() {
 	fmt.Println(strings.Repeat("-", 100))
 	lib.GetBookMarks(browser)
 }

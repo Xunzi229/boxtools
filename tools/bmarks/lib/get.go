@@ -78,11 +78,16 @@ func homeWindows() (string, error) {
 
 func getFile(browser string) string {
 	home, _ := Home()
-    dir := chrome()
-	if browser == "edge" {
-	   dir = edge()
-    }
 
+	dir := ""
+	switch browser {
+	case "yandex":
+		dir = yandex()
+	case "edge":
+		dir = edge()
+	default:
+		dir = chrome()
+	}
 	if runtime.GOOS == "windows" {
 		local := os.Getenv("LOCALAPPDATA")
 		path := fmt.Sprintf("%s/%s/User Data/Default/Bookmarks", local, dir)
@@ -108,11 +113,29 @@ func chrome() string {
 }
 
 func edge() string {
-	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+	if runtime.GOOS == "windows" {
 		return "Microsoft/Edge"
 	}
+
+	if runtime.GOOS == "darwin" {
+		return "Microsoft Edge"
+	}
+
 	panic("Microsoft Edge DON'T SUPPORT")
 }
+
+func yandex() string {
+	if runtime.GOOS == "windows" {
+		return "Yandex/YandexBrowser"
+	}
+
+	if runtime.GOOS == "darwin" {
+		return "Yandex/YandexBrowser"
+	}
+
+	panic("Yandex DON'T SUPPORT")
+}
+
 func parse(content []byte) {
 	book := map[string]interface{}{}
 	_ = json.Unmarshal(content, &book)
