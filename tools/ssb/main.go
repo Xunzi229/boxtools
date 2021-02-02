@@ -87,6 +87,8 @@ func init() {
 				},
 			},
 		},
+		Name:    "ssb",
+		Version: "v0.0.1",
 	}
 
 }
