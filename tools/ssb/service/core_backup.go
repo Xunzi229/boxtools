@@ -16,9 +16,10 @@ import (
 
 // isBackup
 // Determine whether the file has been backed up
-func isBackup(dir string) bool {
+func isBackup(key string) bool {
 	backUpDir()
 
+	dir := strings.Join([]string{ssbDir, key}, "/")
 	s, _ := os.Stat(dir)
 	if s == nil {
 		return false
@@ -38,6 +39,7 @@ func backUpDir() {
 		}
 		_ = os.Mkdir(ssbDir, os.ModePerm)
 		HideDir(ssbDir) //
+	  	s, _ = os.Stat(ssbDir)
 	}
 	if !s.IsDir() {
 		log.Panicf("Backup directory name occupied: %s", ssbDir)
@@ -51,11 +53,11 @@ func backUpSSH(md5 string) {
 
 	/*------------------------------*/
 	priFile := strings.Join([]string{dir, "id_rsa"}, "/")
-	cp(rsaPrivatePath, priFile, 0600)
+	cp(rsaPrivatePath, priFile, os.ModePerm)
 
 	/*------------------------------*/
 	pubFile := strings.Join([]string{dir, "id_rsa.pub"}, "/")
-	cp(rsaPublicPath, pubFile, 0644)
+	cp(rsaPublicPath, pubFile, os.ModePerm)
 	/*------------------------------*/
 
 }
@@ -91,6 +93,10 @@ func tagNameUnique(m map[string]string, name string) string {
 }
 
 func readConfig() []byte {
+  	if _, err := os.Stat(ssbConfig); err != nil {
+  		return []byte("{}")
+	}
+
 	data, err := ioutil.ReadFile(ssbConfig)
 	if err != nil {
 		err = ioutil.WriteFile(ssbConfig, []byte("{}"), os.ModePerm)
@@ -106,12 +112,11 @@ func cp(source, dest string, perm os.FileMode) {
 	data, err := ioutil.ReadFile(source)
 	if err != nil {
 		log.Fatalln(err)
-		return
 	}
 	//fmt.Println("copy:", source, "->", dest)
 	err = ioutil.WriteFile(dest, data, perm)
 	if err != nil {
-		log.Fatalln(err)
+	  	log.Fatalln(err)
 	}
 }
 
@@ -156,7 +161,7 @@ func UnZipFile(srcZip, dstDir string, updateConfig func(rsa, tag string)) (err e
 
 	// 如果解压后不是放在当前目录就按照保存目录去创建目录
 	if dstDir != "" {
-		if err := os.MkdirAll(dstDir, 0755); err != nil {
+		if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
 			return err
 		}
 	}

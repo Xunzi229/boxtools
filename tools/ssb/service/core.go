@@ -39,10 +39,10 @@ func Generate(ctx context.Context) {
 		if needForce != "y" {
 			return
 		}
-		backUpCurrent(ctx, "正在备份旧的Key...")
+		backUpCurrent(ctx, "\n\n------------------------正在备份旧的Key------------------------")
 		makeSSHKeyPair(rsaPublicPath, rsaPrivatePath)
 	}
-	backUpCurrent(ctx, "正在备份新生成的Key:...")
+	backUpCurrent(ctx, "\n\n------------------------正在备份新生成的Key------------------------")
 }
 
 // Back up the current SSH key
@@ -178,8 +178,8 @@ func backUpCurrent(ctx context.Context, tips string) {
 	md := calcMd5(rsaPrivatePath)
 	if ok := isBackup(md); !ok {
 		fmt.Println(tips)
-		tagName := time.Now().Format(config.TimeLayout)
-		tip := fmt.Sprintf("请输入Tag(%s):", tagName)
+		tagName := time.Now().Format(config.BackUpTime)
+		tip := fmt.Sprintf("请输入TagName(%s):", tagName)
 		if str := dao.ScreenInput(tip); len(str) != 0 {
 			tagName = str
 			Backup(ctx, tagName)

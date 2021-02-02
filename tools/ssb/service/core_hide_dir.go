@@ -12,13 +12,7 @@ import (
 // 是否存在
 func existDir(path string) bool {
 	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsExist(err) {
-			log.Println(err)
-			return false
-		}
-	}
-	return true
+	return err == nil
 }
 
 func HideDir(dir string) {

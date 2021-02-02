@@ -1,14 +1,14 @@
 package service
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"golang.org/x/crypto/ssh"
-	"io/ioutil"
-	"log"
-	"os"
+  "crypto/rand"
+  "crypto/rsa"
+  "crypto/x509"
+  "encoding/pem"
+  "golang.org/x/crypto/ssh"
+  "io/ioutil"
+  "log"
+  "os"
 )
 
 // makeSSHKeyPair
@@ -26,12 +26,14 @@ func makeSSHKeyPair(savePublicFileTo, savePrivateFileTo string) {
 
 	privateKeyBytes := encodePrivateKeyToPEM(privateKey)
 
-	err = writeKeyToFile(privateKeyBytes, savePrivateFileTo, 0600)
+	// 这一块考虑原子性， 能还原问题
+	// 后面再解决吧
+  	err = writeKeyToFile(privateKeyBytes, savePrivateFileTo, 0600)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = writeKeyToFile(publicKeyBytes, savePublicFileTo, 0600)
+	err = writeKeyToFile(publicKeyBytes, savePublicFileTo, 0644)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -48,8 +50,6 @@ func generatePrivateKey(bitSize int) (*rsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println("Private Key generated")
 
 	return privateKey, nil
 }
@@ -80,7 +80,6 @@ func generatePublicKey(privateKey *rsa.PublicKey) ([]byte, error) {
 
 	pubKeyBytes := ssh.MarshalAuthorizedKey(publicRsaKey)
 
-	log.Println("Public key generated")
 	return pubKeyBytes, nil
 }
 
@@ -91,7 +90,5 @@ func writeKeyToFile(keyBytes []byte, saveFileTo string, chmod os.FileMode) error
 	if err != nil {
 		return err
 	}
-
-	log.Printf("Key saved to: %s", saveFileTo)
 	return nil
 }

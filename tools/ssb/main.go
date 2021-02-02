@@ -30,7 +30,7 @@ func init() {
 				Aliases: []string{"b"},
 				Usage:   "Back up the current SSH key",
 				Action: func(c *cli.Context) error {
-					name := time.Now().Format(config.Ymdlayout)
+					name := time.Now().Format(config.BackUpTime)
 					if c.NArg() > 0 {
 						name = c.Args().Get(0)
 					}
