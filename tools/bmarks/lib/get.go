@@ -13,6 +13,32 @@ import (
 	"strings"
 )
 
+var (
+	EdgeMap = map[string]string{
+		"windows": "",
+		"linux":   "",
+		"darwin":  "",
+	}
+
+	ChromeMap = map[string]string{
+		"windows": "",
+		"linux":   "",
+		"darwin":  "",
+	}
+
+	YandexMap = map[string]string{
+		"windows": "",
+		"linux":   "",
+		"darwin":  "",
+	}
+
+	DirMap = map[string]map[string]string{
+		"edge":   EdgeMap,
+		"chrome": ChromeMap,
+		"yandex": YandexMap,
+	}
+)
+
 func GetBookMarks(browser string) {
 	path := getFile(browser)
 	// fmt.Println(path)
