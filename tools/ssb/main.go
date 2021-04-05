@@ -14,6 +14,8 @@ import (
 var app = &cli.App{}
 
 func init() {
+	ctx := context.Background()
+
 	app = &cli.App{
 		Commands: []*cli.Command{
 			{
@@ -21,7 +23,7 @@ func init() {
 				Aliases: []string{"g"},
 				Usage:   "Generate new rsa key",
 				Action: func(c *cli.Context) error {
-					service.Generate(context.Background())
+					service.Generate(ctx)
 					return nil
 				},
 			},
@@ -34,7 +36,7 @@ func init() {
 					if c.NArg() > 0 {
 						name = c.Args().Get(0)
 					}
-					service.Backup(context.Background(), name)
+					service.Backup(ctx, name)
 					return nil
 				},
 			},
@@ -43,7 +45,7 @@ func init() {
 				Aliases: []string{"l"},
 				Usage:   "Show all backups",
 				Action: func(c *cli.Context) error {
-					service.List(context.Background())
+					service.List(ctx)
 					return nil
 				},
 			},
@@ -56,7 +58,7 @@ func init() {
 					if c.NArg() > 0 {
 						dst = c.Args().Get(0)
 					}
-					service.Switch(context.Background(), dst)
+					service.Switch(ctx, dst)
 					return nil
 				},
 			},
@@ -69,7 +71,7 @@ func init() {
 					if c.NArg() > 0 {
 						dst = c.Args().Get(0)
 					}
-					service.Export(context.Background(), dst)
+					service.Export(ctx, dst)
 					return nil
 				},
 			},
@@ -82,7 +84,7 @@ func init() {
 					if c.NArg() > 0 {
 						zip = c.Args().Get(0)
 					}
-					service.Load(context.Background(), zip)
+					service.Load(ctx, zip)
 					return nil
 				},
 			},

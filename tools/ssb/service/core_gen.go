@@ -1,14 +1,14 @@
 package service
 
 import (
-  "crypto/rand"
-  "crypto/rsa"
-  "crypto/x509"
-  "encoding/pem"
-  "golang.org/x/crypto/ssh"
-  "io/ioutil"
-  "log"
-  "os"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"golang.org/x/crypto/ssh"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
 // makeSSHKeyPair
@@ -28,7 +28,7 @@ func makeSSHKeyPair(savePublicFileTo, savePrivateFileTo string) {
 
 	// 这一块考虑原子性， 能还原问题
 	// 后面再解决吧
-  	err = writeKeyToFile(privateKeyBytes, savePrivateFileTo, 0600)
+	err = writeKeyToFile(privateKeyBytes, savePrivateFileTo, 0600)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

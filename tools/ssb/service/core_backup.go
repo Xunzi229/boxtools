@@ -39,7 +39,7 @@ func backUpDir() {
 		}
 		_ = os.Mkdir(ssbDir, os.ModePerm)
 		HideDir(ssbDir) //
-	  	s, _ = os.Stat(ssbDir)
+		s, _ = os.Stat(ssbDir)
 	}
 	if !s.IsDir() {
 		log.Panicf("Backup directory name occupied: %s", ssbDir)
@@ -93,8 +93,8 @@ func tagNameUnique(m map[string]string, name string) string {
 }
 
 func readConfig() []byte {
-  	if _, err := os.Stat(ssbConfig); err != nil {
-  		return []byte("{}")
+	if _, err := os.Stat(ssbConfig); err != nil {
+		return []byte("{}")
 	}
 
 	data, err := ioutil.ReadFile(ssbConfig)
@@ -116,7 +116,7 @@ func cp(source, dest string, perm os.FileMode) {
 	//fmt.Println("copy:", source, "->", dest)
 	err = ioutil.WriteFile(dest, data, perm)
 	if err != nil {
-	  	log.Fatalln(err)
+		log.Fatalln(err)
 	}
 }
 
