@@ -73,7 +73,7 @@ var app = &cli.App{}
 
 type File struct {
 	path string
-	size int
+	size int64
 	md5  string
 }
 
@@ -185,7 +185,7 @@ func parallel(fp string) {
 	<-th
 }
 
-func calcMd5(filename string) (string, int) {
+func calcMd5(filename string) (string, int64) {
 	pFile, err := os.Open(filename)
 	if err != nil {
 		_ = fmt.Errorf("打开文件失败，filename=%v, err=%v", filename, err)
@@ -195,19 +195,11 @@ func calcMd5(filename string) (string, int) {
 
 	md5h := md5.New()
 	_, _ = io.Copy(md5h, pFile)
-	fi, _ := pFile.Stat()
-	return hex.EncodeToString(md5h.Sum(nil)), int(fi.Size())
+
+	return hex.EncodeToString(md5h.Sum(nil)), calcSize(pFile)
 }
 
-func calcSize(file *os.File) int {
-	sum := 0
-	buf := make([]byte, 2014)
-	for {
-		n, err := file.Read(buf)
-		sum += n
-		if err == io.EOF {
-			break
-		}
-	}
-	return sum
+func calcSize(file *os.File) int64 {
+	fi, _ := file.Stat()
+	return fi.Size()
 }
