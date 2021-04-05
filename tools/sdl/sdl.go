@@ -7,7 +7,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -65,7 +64,8 @@ func init() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		redPrint(err.Error())
+		os.Exit(1)
 	}
 }
 
