@@ -68,3 +68,16 @@ $: ssb export .     # 备份文件存在当前目录
 $: ssb load ~/Desktop/backup.zip
 ```
 
+## remd5
+
+史上最快查找重复文件，删除文件
+
+```shell
+go install tools/sdl/sdl.go
+
+sdl  
+  -d   /home/xz/path 选择去重的目录, 绝对路劲
+  --dl Y             删除重复的文件
+  -f   .jpg          去重的文件后缀, 多个文件后缀选择使用逗号隔开(.jpg,.png), 不区分大小写
+```
+
