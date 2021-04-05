@@ -1,19 +1,19 @@
 package service
 
 import (
-	"boxtools/tools/ssb/config"
-	"boxtools/tools/ssb/dao"
-	"context"
-	"crypto/md5"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-	"log"
-	"os"
-	"os/user"
-	"strings"
-	"time"
+  "context"
+  "crypto/md5"
+  "encoding/hex"
+  "encoding/json"
+  "fmt"
+  "io"
+  "log"
+  "os"
+  "os/user"
+  "ssb/config"
+  "ssb/dao"
+  "strings"
+  "time"
 )
 
 var (
@@ -32,7 +32,6 @@ var (
 func Generate(ctx context.Context) {
 	// Determine whether the original key needs to be covered. If it is covered, the data will be backed up before
 	if !existDir(rsaPrivatePath) || !existDir(rsaPublicPath) {
-		fmt.Println(">>>>")
 		makeSSHKeyPair(rsaPublicPath, rsaPrivatePath)
 	} else {
 		needForce := dao.ScreenInput("是否需要强制更新SSH(y/n):")
@@ -49,7 +48,7 @@ func Generate(ctx context.Context) {
 func Backup(ctx context.Context, tagName string) {
 	md := calcMd5(rsaPrivatePath)
 
-	// 如果备份了， 则fa返回
+	// 如果备份了， 则返回
 	if ok := isBackup(md); ok {
 		fmt.Println("Backup completed！！！")
 		return
@@ -64,6 +63,7 @@ func List(ctx context.Context) {
 	m := map[string]string{}
 	_ = json.Unmarshal(conf, &m)
 	md := calcMd5(rsaPrivatePath)
+
 	for k, v := range m {
 		if md == k {
 			fmt.Printf("\x1b[32m* %s \t %s \x1b[0m\n", k[0:10], v)
@@ -75,6 +75,8 @@ func List(ctx context.Context) {
 
 // switch ssh key
 func Switch(ctx context.Context, dst string) {
+	dst = strings.TrimSpace(dst)
+
 	conf := readConfig()
 	m := map[string]string{}
 	_ = json.Unmarshal(conf, &m)
@@ -95,6 +97,8 @@ func Switch(ctx context.Context, dst string) {
 	pubFile := strings.Join([]string{dir, "id_rsa.pub"}, "/")
 	cp(pubFile, rsaPublicPath, 0644)
 	/*------------------------------*/
+
+	List(ctx)
 }
 
 // 导出配置
@@ -161,12 +165,12 @@ func switchKey(m map[string]string, dst string, n int) string {
 	}
 
 	for k, v := range m {
-		if strings.HasPrefix(dst, k) || dst == v {
+		if strings.HasPrefix(k, dst) || dst == v {
 			return k
 		}
 	}
 	fmt.Printf("\x1b[31m%s\x1b[0m\n", "switch error!!!")
-	fmt.Println("--------------需要从以下配置项选择--------------")
+	fmt.Println("\n--------------需要从以下配置项选择--------------")
 	List(context.Background())
 
 	tip := fmt.Sprintf("请输入切换的配置:")

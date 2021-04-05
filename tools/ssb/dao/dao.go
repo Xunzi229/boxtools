@@ -6,7 +6,6 @@ var (
 	TipChan  chan string
 	StopChan chan bool
 	MsgChan  chan string
-	v        string
 )
 
 func Run() {
@@ -15,12 +14,12 @@ func Run() {
 	MsgChan = make(chan string, 0)
 
 	for {
+		v := ""
 		select {
 		case tips := <-TipChan:
 			fmt.Print(tips)
 			_, _ = fmt.Scanln(&v)
 			MsgChan <- v
-			v = ""
 		case <-StopChan:
 			return
 		}

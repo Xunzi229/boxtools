@@ -1,8 +1,12 @@
 # SSB
 
-用于管理不同的SSH KEY, 有时候我们在公司在不同的场合下用了不同的SSH KEY， 手动更改配置，其实相当的麻烦， 所以基于这个场景我们增加了一个SSH配置管理的工具
+用于管理不同场景下SSH KEY。 
+
+有时候我们办公用的是一套SSH KEY, 个人使用一套SSH KEY ，如果每次都是手动变更配置，
+其实相当的麻烦， 所以基于这个场景， 于是肝了一天， 写了一个SSH配置管理的工具。
 
 这个工具的用途
+
     * 基于 rsa 生成 ssh key
     * 备份当前的 ssh 配置
     * 导出配置
@@ -17,7 +21,7 @@
 * 安装
 
 ```shell
-$: go install ./tools/ssb
+$: go install .
 ```
 
 * 生成的新的KEY
@@ -62,4 +66,17 @@ $: ssb export .     # 备份文件存在当前目录
 
 ```shell
 $: ssb load ~/Desktop/backup.zip
+```
+
+
+### 权限问题
+
+可能在配置的时候出现权限的问题。
+
+> 保证初始的权限， 不然会更新异常的问题
+
+```shell
+chmod -R 755 ~/.ssh
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub
 ```

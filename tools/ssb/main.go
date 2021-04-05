@@ -1,14 +1,14 @@
 package main
 
 import (
-	"boxtools/tools/ssb/config"
-	"boxtools/tools/ssb/dao"
-	"boxtools/tools/ssb/service"
-	"context"
-	"github.com/urfave/cli/v2"
-	"log"
-	"os"
-	"time"
+  "context"
+  "github.com/urfave/cli/v2"
+  "log"
+  "os"
+  "ssb/config"
+  "ssb/dao"
+  "ssb/service"
+  "time"
 )
 
 var app = &cli.App{}
@@ -87,8 +87,8 @@ func init() {
 				},
 			},
 		},
-		Name:    "ssb",
-		Version: "v0.0.1",
+		Name:    "SSB",
+		Version: "v0.0.2",
 	}
 
 }

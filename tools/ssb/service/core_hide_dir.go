@@ -3,10 +3,11 @@ package service
 import (
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
+	// "syscall"
 )
 
 // 是否存在
@@ -43,11 +44,13 @@ func HideFile(doc string) {
 
 // windows
 func hideWindowDir(pathName string) error {
-	fileName, err := syscall.UTF16PtrFromString(pathName)
-	if err != nil {
-		return err
+	var err error
+
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("attrib", pathName, "+h")
+		err = cmd.Run()
 	}
-	return syscall.SetFileAttributes(fileName, syscall.FILE_ATTRIBUTE_HIDDEN)
+	return err
 }
 
 // unix
