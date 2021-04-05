@@ -23,9 +23,9 @@ func init() {
 		Name:        "史上最快查找重复文件、删除多余文件",
 		HelpName:    "",
 		Usage:       "",
-		UsageText:   "",
+		UsageText:   "筛选删除文件",
 		ArgsUsage:   "",
-		Version:     "BookMarks v0.1.1",
+		Version:     "v0.0.1",
 		Description: "",
 		Commands:    nil,
 		Flags: []cli.Flag{
@@ -81,6 +81,7 @@ var (
 	ch     = make(chan string, 100)
 	repeat = make(map[string][]*File)
 	mux    = sync.WaitGroup{}
+	dirMux = sync.WaitGroup{}
 	th     = make(chan bool, 1)
 )
 
@@ -89,6 +90,7 @@ func main() {
 
 	go loopCenter()
 	traverseDir(dir)
+	dirMux.Wait()
 	mux.Wait()
 
 	for k, fs := range repeat {
@@ -124,6 +126,9 @@ func yellowPrint(str string) {
 }
 
 func traverseDir(dirPth string) {
+	dirMux.Add(1)
+	defer dirMux.Done()
+
 	dirPath, err := ioutil.ReadDir(dirPth)
 	if err != nil {
 		panic(err)
