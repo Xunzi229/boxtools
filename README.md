@@ -68,7 +68,7 @@ $: ssb export .     # 备份文件存在当前目录
 $: ssb load ~/Desktop/backup.zip
 ```
 
-## remd5
+## search and delete (sdl)
 
 史上最快查找重复文件，删除文件
 
