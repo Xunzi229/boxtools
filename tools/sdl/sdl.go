@@ -30,17 +30,17 @@ func init() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "dir",
-				Value:       ".",
+				Value:       "",
 				Destination: &dir,
 				Aliases:     []string{"d"},
-				Usage:       "选择目录",
+				Usage:       "选择目录,绝对路径",
 			},
 			&cli.StringFlag{
 				Name:        "delete",
 				Value:       "N",
 				Destination: &isDelete,
 				Aliases:     []string{"dl"},
-				Usage:       "是否自动删除重复的文件： --dl Y",
+				Usage:       "是否自动删除重复的文件： -dl Y",
 			},
 
 			&cli.StringFlag{
@@ -99,7 +99,7 @@ func main() {
 		}
 
 		for i, f := range fs {
-			msg := fmt.Sprintf("%20s %10d %20s\n", k, f.size, f.path)
+			msg := fmt.Sprintf("%15s %6d %22s", k, f.size, f.path)
 
 			if i >= 1 && isDelete == "Y" && f.size == fs[0].size {
 				err := os.Remove(f.path)
@@ -113,7 +113,7 @@ func main() {
 			fmt.Println(msg)
 		}
 
-		fmt.Println(strings.Repeat("-", 30))
+		fmt.Println(strings.Repeat("-", 60)+"\n")
 	}
 }
 
