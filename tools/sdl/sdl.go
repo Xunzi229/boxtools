@@ -12,21 +12,20 @@ import (
 	"sync"
 )
 
-var dir string
-var isDelete string
-var needFilter string
-var needFilters []string
+var (
+	dir        string
+	isDelete   string
+	needFilter string
+)
+
+var app = &cli.App{}
 
 func init() {
 	app = &cli.App{
-		Name:        "史上最快查找重复文件、删除多余文件",
-		HelpName:    "",
-		Usage:       "",
-		UsageText:   "筛选删除文件",
-		ArgsUsage:   "",
-		Version:     "v0.0.1",
-		Description: "",
-		Commands:    nil,
+		Name:      "史上最快查找重复文件、删除多余文件",
+		UsageText: "筛选删除文件",
+		Version:   "v0.0.1",
+		Commands:  nil,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "dir",
@@ -40,7 +39,7 @@ func init() {
 				Value:       "N",
 				Destination: &isDelete,
 				Aliases:     []string{"dl"},
-				Usage:       "是否自动删除重复的文件： -dl Y",
+				Usage:       "是否自动删除重复的文件(Y/N)： -dl Y",
 			},
 
 			&cli.StringFlag{
@@ -51,25 +50,25 @@ func init() {
 				Usage:       "需要过滤相关文件: -f .jpg",
 			},
 		},
-		HideHelp:        true,
-		HideHelpCommand: true,
 		Authors: []*cli.Author{
 			{
 				Name:  "xunzi",
 				Email: "https://github.com/Xunzi229",
 			},
 		},
-		Copyright: "© 2021 Xunzi229, Inc.",
+		HideHelp:        true,
+		HideHelpCommand: true,
+		HideVersion:     true,
+		Copyright:       "© 2021 Xunzi229, Inc.",
 	}
 
 	err := app.Run(os.Args)
+
 	if err != nil {
 		redPrint(err.Error())
 		os.Exit(1)
 	}
 }
-
-var app = &cli.App{}
 
 type File struct {
 	path string
@@ -78,14 +77,22 @@ type File struct {
 }
 
 var (
-	ch     = make(chan string, 100)
-	repeat = make(map[string][]*File)
-	mux    = sync.WaitGroup{}
-	dirMux = sync.WaitGroup{}
-	th     = make(chan bool, 1)
+	ch          = make(chan string, 100)
+	repeat      = make(map[string][]*File)
+	mux         = sync.WaitGroup{}
+	dirMux      = sync.WaitGroup{}
+	th          = make(chan bool, 1)
+	needFilters []string
 )
 
 func main() {
+	if file, err := os.Stat(dir); err != nil || !file.IsDir() {
+		msg := fmt.Sprintf("\n无效目录 \n\t %v \n\t dir: %s", err, dir)
+		redPrint(msg)
+
+		os.Exit(0)
+	}
+
 	needFilters = strings.Split(needFilter, ",")
 
 	go loopCenter()
@@ -113,7 +120,7 @@ func main() {
 			fmt.Println(msg)
 		}
 
-		fmt.Println(strings.Repeat("-", 60)+"\n")
+		fmt.Println(strings.Repeat("-", 60) + "\n")
 	}
 }
 
