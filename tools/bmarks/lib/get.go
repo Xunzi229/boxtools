@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 var (
@@ -37,6 +38,10 @@ var (
 		"chrome": ChromeMap,
 		"yandex": YandexMap,
 	}
+
+	PrintStyle = "json"
+
+	doPrintHeader = sync.Once{}
 )
 
 func GetBookMarks(browser string) {
@@ -182,14 +187,22 @@ func children(m []interface{}, step string, level int) {
 
 		if v1["type"] == "url" {
 			v1["folder"] = step
-			data := map[string]interface{}{
-				"folder": step,
-				"url":    v1["url"],
-				"name":   v1["name"],
+
+			switch PrintStyle {
+			case "row":
+				fmt.Printf("目录:%s\n", v1["folder"])
+				fmt.Printf("名称:%s\n", v1["name"])
+				fmt.Printf("链接:%s\n", v1["url"])
+				fmt.Println(strings.Repeat("~", 100) + "\n")
+			default:
+				data := map[string]interface{}{
+					"folder": step,
+					"url":    v1["url"],
+					"name":   v1["name"],
+				}
+				d, _ := json.MarshalIndent(data, "", "\t")
+				_, _ = fmt.Println(string(d) + "\n")
 			}
-			d, _ := json.MarshalIndent(data, "", "\t")
-			_, _ = fmt.Println(string(d))
-			fmt.Println("\n")
 		}
 	}
 }
