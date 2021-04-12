@@ -11,7 +11,6 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 var (
@@ -40,8 +39,6 @@ var (
 	}
 
 	PrintStyle = "json"
-
-	doPrintHeader = sync.Once{}
 )
 
 func GetBookMarks(browser string) {
