@@ -39,8 +39,8 @@ var (
 	mainFile      string
 	compareFiles  string
 	app           = &cli.App{}
-	funHead, _    = regexp.Compile(`^func [a-z|A-Z]+\(`)
-	structHead, _ = regexp.Compile(`^type [a-z|A-Z]+ struct \{`)
+	funHead, _    = regexp.Compile(`^func [a-z|A-Z|\d]+\(`)
+	structHead, _ = regexp.Compile(`^type [a-z|A-Z|\d]+ struct \{`)
 	funcFooter, _ = regexp.Compile(`^}`)
 
 	doPrint = sync.Once{}
@@ -155,7 +155,6 @@ func readMain() {
 					// 如果是function
 					if funHead.MatchString(line) {
 						funcName = getFuncName(line)
-
 						if MasterFunc[funcName] != nil {
 							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s\n", filePath, lineNumber, funcName)
 							redPrint(msg)
@@ -467,8 +466,8 @@ func purplePrint(str string) {
 }
 
 var (
-	FunHeader, _    = regexp.Compile(`^func ([a-z|A-Z]+)\(`)
-	StructHeader, _ = regexp.Compile(`^type ([a-z|A-Z]+) struct \{`)
+	FunHeader, _    = regexp.Compile(`^func ([a-z|A-Z|\d]+)\(`)
+	StructHeader, _ = regexp.Compile(`^type ([a-z|A-Z|\d]+) struct \{`)
 )
 
 func getFuncName(str string) string {
