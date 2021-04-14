@@ -14,6 +14,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 var (
@@ -41,6 +42,8 @@ var (
 	funHead, _    = regexp.Compile(`^func [a-z|A-Z]+\(`)
 	structHead, _ = regexp.Compile(`^type [a-z|A-Z]+ struct \{`)
 	funcFooter, _ = regexp.Compile(`^}`)
+
+	doPrint = sync.Once{}
 )
 
 type FileInfo struct {
@@ -106,13 +109,19 @@ func main() {
 
 	for k, _ := range MasterFunc {
 		if len(MasterFuncExist[k]) == 0 {
-			redPrint(fmt.Sprintf("这个主函数没有被匹配到: %s", k))
+			info := MasterFuncInfo[k]
+			msg := fmt.Sprintf("Func未被匹配[%s:%d]: %s", info.file, info.lineNumber, k)
+			redPrint(msg)
 		}
 	}
-
 	for k, _ := range MasterStruct {
 		if len(MasterStructExist[k]) == 0 {
-			redPrint(fmt.Sprintf("这个主Struct没有被匹配到: %s", k))
+			doPrint.Do(func() {
+				yellowPrint(strings.Repeat("~~~", 30))
+			})
+			info := MasterStructInfo[k]
+			msg := fmt.Sprintf("Struct未被匹配[%s:%d]: %s", info.file, info.lineNumber, k)
+			redPrint(msg)
 		}
 	}
 }
