@@ -25,10 +25,21 @@ var (
 	SlaveFunc     = map[string]*[]FileLineInfo{}
 	SlaveFuncInfo = map[string]*FileInfo{}
 
+	MasterFuncExist = map[string]string{}
+
+	MasterStruct     = map[string]*[]FileLineInfo{}
+	MasterStructInfo = map[string]*FileInfo{}
+
+	SlaveStruct     = map[string]*[]FileLineInfo{}
+	SlaveStructInfo = map[string]*FileInfo{}
+
+	MasterStructExist = map[string]string{}
+
 	mainFile      string
 	compareFiles  string
 	app           = &cli.App{}
 	funHead, _    = regexp.Compile(`^func [a-z|A-Z]+\(`)
+	structHead, _ = regexp.Compile(`^type [a-z|A-Z]+ struct \{`)
 	funcFooter, _ = regexp.Compile(`^}`)
 )
 
@@ -92,6 +103,18 @@ func main() {
 	yellowPrint("正在读取辅文件...")
 	readSlave()
 	yellowPrint("读取辅文件完成...")
+
+	for k, _ := range MasterFunc {
+		if len(MasterFuncExist[k]) == 0 {
+			redPrint(fmt.Sprintf("这个主函数没有被匹配到: %s", k))
+		}
+	}
+
+	for k, _ := range MasterStruct {
+		if len(MasterStructExist[k]) == 0 {
+			redPrint(fmt.Sprintf("这个主Struct没有被匹配到: %s", k))
+		}
+	}
 }
 
 func readMain() {
@@ -113,12 +136,15 @@ func readMain() {
 			isStart := false
 			funcName := ""
 			lineNumber := 0
+			structName := ""
+
 			for {
 				line, err := buf.ReadString('\n')
 				lineNumber++
 
 				if !isStart {
-					if funHead.Match([]byte(line)) {
+					// 如果是function
+					if funHead.MatchString(line) {
 						funcName = getFuncName(line)
 
 						if MasterFunc[funcName] != nil {
@@ -152,16 +178,65 @@ func readMain() {
 						})
 
 						isStart = true
-					}
-				} else {
-					*MasterFunc[funcName] = append(*MasterFunc[funcName], FileLineInfo{
-						lineNumber: lineNumber,
-						text:       line,
-						file:       filePath,
-					})
 
-					if funcFooter.Match([]byte(line)) {
+						continue
+					}
+
+					// 如果是 struct
+					if structHead.MatchString(line) {
+						structName = getStructName(line)
+
+						if MasterStruct[structName] != nil {
+							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s", filePath, lineNumber, structName)
+							redPrint(msg)
+							panic(msg)
+						}
+
+						// record func start
+						if MasterStructInfo[structName] == nil {
+							MasterStructInfo[structName] = &FileInfo{
+								lineNumber: lineNumber,
+								file:       filePath,
+							}
+						}
+						// record func start
+						if MasterStructInfo[structName] == nil {
+							MasterStructInfo[structName] = &FileInfo{
+								lineNumber: lineNumber,
+								file:       filePath,
+							}
+						}
+						if MasterStruct[structName] == nil {
+							fi := make([]FileLineInfo, 0)
+							MasterStruct[structName] = &fi
+						}
+						*MasterStruct[structName] = append(*MasterStruct[structName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
+
+						isStart = true
+					}
+
+				} else {
+					if len(structName) == 0 {
+						*MasterFunc[funcName] = append(*MasterFunc[funcName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
+					} else {
+						*MasterStruct[structName] = append(*MasterStruct[structName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
+					}
+
+					if funcFooter.MatchString(line) {
 						funcName = ""
+						structName = ""
 						isStart = false
 					}
 				}
@@ -198,6 +273,7 @@ func readSlave() {
 
 			isStart := false
 			funcName := ""
+			structName := ""
 			lineNumber := 0
 
 			for {
@@ -205,6 +281,7 @@ func readSlave() {
 				lineNumber++
 
 				if !isStart {
+					// 如果是function
 					if funHead.MatchString(line) {
 						isStart = true
 
@@ -232,44 +309,126 @@ func readSlave() {
 							text:       line,
 							file:       filePath,
 						})
+						continue
+					}
+
+					// 如果是 struct
+					if structHead.MatchString(line) {
+						structName = getStructName(line)
+
+						if SlaveStruct[structName] != nil {
+							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s", filePath, lineNumber, structName)
+							redPrint(msg)
+							panic(msg)
+						}
+
+						// record func start
+						if SlaveStructInfo[structName] == nil {
+							SlaveStructInfo[structName] = &FileInfo{
+								lineNumber: lineNumber,
+								file:       filePath,
+							}
+						}
+						// record func start
+						if SlaveStructInfo[structName] == nil {
+							SlaveStructInfo[structName] = &FileInfo{
+								lineNumber: lineNumber,
+								file:       filePath,
+							}
+						}
+						if SlaveStruct[structName] == nil {
+							fi := make([]FileLineInfo, 0)
+							SlaveStruct[structName] = &fi
+						}
+						*SlaveStruct[structName] = append(*SlaveStruct[structName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
+
+						isStart = true
 					}
 				} else {
-					*SlaveFunc[funcName] = append(*SlaveFunc[funcName], FileLineInfo{
-						lineNumber: lineNumber,
-						text:       line,
-						file:       filePath,
-					})
+					if len(structName) == 0 {
+						*SlaveFunc[funcName] = append(*SlaveFunc[funcName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
 
-					if funcFooter.Match([]byte(line)) {
-						isStart = false
-						if MasterFunc[funcName] == nil {
-							msg := fmt.Sprintf("主文件不存在这个function:%s\n", funcName)
-							redPrint(msg)
-							funcName = ""
-							continue
-						}
-						// 如果主函数和比较的函数不一样
-						if funcIsEqual(*MasterFunc[funcName], *SlaveFunc[funcName]) {
-							funcName = ""
-							continue
-						}
+						if funcFooter.MatchString(line) {
+							isStart = false
+							if MasterFunc[funcName] == nil {
+								msg := fmt.Sprintf("主文件不存在这个function:%s\n", funcName)
+								redPrint(msg)
+								funcName = ""
+								continue
+							}
 
-						redPrint(funcName + ":" + strings.Repeat("~", 50))
-						fmt.Println("Is compare function: ", funcName)
-						for i, lineText := range *MasterFunc[funcName] {
-							if i >= len(*SlaveFunc[funcName]) {
-								break
+							MasterFuncExist[funcName] = funcName
+
+							// 如果主函数和比较的函数不一样
+							if contextIsEqual(*MasterFunc[funcName], *SlaveFunc[funcName]) {
+								funcName = ""
+								continue
 							}
-							sf := *SlaveFunc[funcName]
-							if lineText.text != sf[i].text {
-								msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
-								redPrint(msg1)
-								msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
-								purplePrint(msg2)
+
+							redPrint(funcName + ":" + strings.Repeat("~", 50))
+							fmt.Println("Is compare function: ", funcName)
+							for i, lineText := range *MasterFunc[funcName] {
+								if i >= len(*SlaveFunc[funcName]) {
+									break
+								}
+								sf := *SlaveFunc[funcName]
+								if lineText.text != sf[i].text {
+									msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
+									redPrint(msg1)
+									msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
+									purplePrint(msg2)
+								}
 							}
+							funcName = ""
 						}
-						fmt.Println(strings.Repeat("...", 20))
-						funcName = ""
+					} else {
+						*SlaveStruct[structName] = append(*SlaveStruct[structName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
+
+						if funcFooter.MatchString(line) {
+							isStart = false
+							if MasterStruct[structName] == nil {
+								msg := fmt.Sprintf("主文件不存在这个struct:%s\n", structName)
+								redPrint(msg)
+								structName = ""
+								continue
+							}
+
+							MasterStructExist[structName] = structName
+
+							// 如果主struct和比较的struct不一样
+							if contextIsEqual(*MasterStruct[structName], *SlaveStruct[structName]) {
+								structName = ""
+								continue
+							}
+
+							redPrint(structName + ":" + strings.Repeat("~", 50))
+							fmt.Println("Is compare struct: ", structName)
+							for i, lineText := range *MasterStruct[structName] {
+								if i >= len(*SlaveFunc[structName]) {
+									break
+								}
+								sf := *SlaveFunc[structName]
+								if lineText.text != sf[i].text {
+									msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
+									redPrint(msg1)
+									msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
+									purplePrint(msg2)
+								}
+							}
+							structName = ""
+						}
 					}
 				}
 
@@ -299,11 +458,17 @@ func purplePrint(str string) {
 }
 
 var (
-	FunHeader, _ = regexp.Compile(`^func ([a-z|A-Z]+)\(`)
+	FunHeader, _    = regexp.Compile(`^func ([a-z|A-Z]+)\(`)
+	StructHeader, _ = regexp.Compile(`^type ([a-z|A-Z]+) struct \{`)
 )
 
 func getFuncName(str string) string {
 	fs := FunHeader.FindStringSubmatch(str)
+	return fs[1]
+}
+
+func getStructName(str string) string {
+	fs := StructHeader.FindStringSubmatch(str)
 	return fs[1]
 }
 
@@ -317,7 +482,7 @@ func completePath(filePath string) string {
 	return strings.Join([]string{d, filePath}, "/")
 }
 
-func funcIsEqual(func1, func2 []FileLineInfo) bool {
+func contextIsEqual(func1, func2 []FileLineInfo) bool {
 	fc := func(v []FileLineInfo) []string {
 		cs := make([]string, 0)
 		for i := 0; i < len(v); i++ {

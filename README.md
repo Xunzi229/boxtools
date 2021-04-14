@@ -84,9 +84,8 @@ sdl
 ## 增加方法比较
 
 * 该工具暂时只用于比较两个多对多的Go文件中函数的区别， 后面可以增加其他的语言
-
+* 增加对 Go struct 的比较
 ```shell
-
 go install tools/ggg/ggg.go 
 
 ggg
