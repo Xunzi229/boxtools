@@ -60,23 +60,23 @@ type FileLineInfo struct {
 
 func init() {
 	app = &cli.App{
-		Name:        "GO Func Diff",
-		Version:     "god v0.0.1",
-		Description: "比较文件内的函数和未变更的函数的区别",
+		Name:        "Go Func Diff",
+		Version:     "cor v0.0.1",
+		Description: "多文件比较双方其中函数不一致问题",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "mf",
 				Value:       "",
 				Destination: &mainFile,
 				Aliases:     []string{"m"},
-				Usage:       "选择主要的文件",
+				Usage:       "选择主要的文件,多文件以`,`隔开",
 			},
 			&cli.StringFlag{
 				Name:        "sf",
 				Value:       "",
 				Destination: &compareFiles,
 				Aliases:     []string{"s"},
-				Usage:       "需要需要比较的文件, 多文件以,隔开",
+				Usage:       "需要需要比较的文件, 多文件以`,`隔开",
 			},
 		},
 		Authors: []*cli.Author{

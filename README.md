@@ -86,11 +86,11 @@ sdl
 * 该工具暂时只用于比较两个多对多的Go文件中函数的区别， 后面可以增加其他的语言
 * 增加对 Go struct 的比较
 ```shell
-go install tools/ggg/ggg.go 
+go install tools/cor/cor.go 
 
-ggg
-    --mf value, -m value  选择主要的文件
-    --sf value, -s value  需要需要比较的文件, 多文件以,隔开
+cor
+    --mf value, -m value  选择主要的文件, 多文件以`,`隔开
+    --sf value, -s value  需要需要比较的文件, 多文件以`,`隔开
     --help, -h            show help (default: false)
     --version, -v         print the version (default: false)
 ```
