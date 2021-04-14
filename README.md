@@ -81,3 +81,17 @@ sdl
   -f   .jpg          去重的文件后缀, 多个文件后缀选择使用逗号隔开(.jpg,.png), 不区分大小写
 ```
 
+## 增加方法比较
+
+* 该工具暂时只用于比较两个多对多的Go文件中函数的区别， 后面可以增加其他的语言
+
+```shell
+
+go install tools/ggg/ggg.go 
+
+ggg
+    --mf value, -m value  选择主要的文件
+    --sf value, -s value  需要需要比较的文件, 多文件以,隔开
+    --help, -h            show help (default: false)
+    --version, -v         print the version (default: false)
+```

@@ -19,18 +19,26 @@ import (
 var (
 	// funcName => funcLineText
 
-	MasterFunc     = map[string][]string{}
-	SlaveFunc      = map[string][]string{}
-	MasterFuncInfo = map[string]*MasterInfo{}
-	SlaveFuncInfo  = map[string]*MasterInfo{}
-	mainFile       string
-	compareFiles   string
-	app            = &cli.App{}
-	funHead, _     = regexp.Compile(`^func [a-z|A-Z]+\(`)
-	funcFooter, _  = regexp.Compile(`^}`)
+	MasterFunc     = map[string]*[]FileLineInfo{}
+	MasterFuncInfo = map[string]*FileInfo{}
+
+	SlaveFunc     = map[string]*[]FileLineInfo{}
+	SlaveFuncInfo = map[string]*FileInfo{}
+
+	mainFile      string
+	compareFiles  string
+	app           = &cli.App{}
+	funHead, _    = regexp.Compile(`^func [a-z|A-Z]+\(`)
+	funcFooter, _ = regexp.Compile(`^}`)
 )
 
-type MasterInfo struct {
+type FileInfo struct {
+	lineNumber int
+	text       string
+	file       string
+}
+
+type FileLineInfo struct {
 	lineNumber int
 	text       string
 	file       string
@@ -81,9 +89,9 @@ func main() {
 	readMain()
 	yellowPrint("读取主文件完成...")
 
-	yellowPrint("正在读辅助文件....")
+	yellowPrint("正在读辅助文件...")
 	readSlave()
-	yellowPrint("读取主辅助完成....")
+	yellowPrint("读取主辅助完成...")
 }
 
 func readMain() {
@@ -91,11 +99,11 @@ func readMain() {
 	for i := 0; i < len(files); i++ {
 		func(filePath string) {
 			filePath = strings.TrimSpace(filePath)
-			filePath = completePath(filePath)
+			cPath := completePath(filePath)
 
-			file, err := os.OpenFile(filePath, os.O_RDWR, 0666)
+			file, err := os.OpenFile(cPath, os.O_RDWR, 0666)
 			if err != nil {
-				fmt.Printf("Open [%s] error, err: %v\n", filePath, err)
+				fmt.Printf("Open [%s] error, err: %v\n", cPath, err)
 				return
 			}
 			defer file.Close()
@@ -113,7 +121,7 @@ func readMain() {
 					if funHead.Match([]byte(line)) {
 						funcName = getFuncName(line)
 
-						if len(MasterFunc[funcName]) != 0 {
+						if MasterFunc[funcName] != nil {
 							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s", filePath, lineNumber, funcName)
 							redPrint(msg)
 							panic(msg)
@@ -121,20 +129,37 @@ func readMain() {
 
 						// record func start
 						if MasterFuncInfo[funcName] == nil {
-							MasterFuncInfo[funcName] = &MasterInfo{
+							MasterFuncInfo[funcName] = &FileInfo{
 								lineNumber: lineNumber,
 								file:       filePath,
 							}
 						}
+						// record func start
+						if MasterFuncInfo[funcName] == nil {
+							MasterFuncInfo[funcName] = &FileInfo{
+								lineNumber: lineNumber,
+								file:       filePath,
+							}
+						}
+						if MasterFunc[funcName] == nil {
+							fi := make([]FileLineInfo, 0)
+							MasterFunc[funcName] = &fi
+						}
+						*MasterFunc[funcName] = append(*MasterFunc[funcName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
 
 						isStart = true
-						if MasterFunc[funcName] == nil {
-							MasterFunc[funcName] = make([]string, 0)
-						}
-						MasterFunc[funcName] = append(MasterFunc[funcName], line)
 					}
 				} else {
-					MasterFunc[funcName] = append(MasterFunc[funcName], line)
+					*MasterFunc[funcName] = append(*MasterFunc[funcName], FileLineInfo{
+						lineNumber: lineNumber,
+						text:       line,
+						file:       filePath,
+					})
+
 					if funcFooter.Match([]byte(line)) {
 						funcName = ""
 						isStart = false
@@ -160,11 +185,11 @@ func readSlave() {
 	for i := 0; i < len(files); i++ {
 		func(filePath string) {
 			filePath = strings.TrimSpace(filePath)
-			filePath = completePath(filePath)
+			cPath := completePath(filePath)
 
-			file, err := os.OpenFile(filePath, os.O_RDWR, 0666)
+			file, err := os.OpenFile(cPath, os.O_RDWR, 0666)
 			if err != nil {
-				fmt.Printf("Open [%s] error, err: %v\n", filePath, err)
+				fmt.Printf("Open [%s] error, err: %v\n", cPath, err)
 				return
 			}
 			defer file.Close()
@@ -180,10 +205,12 @@ func readSlave() {
 				lineNumber++
 
 				if !isStart {
-					if funHead.Match([]byte(line)) {
+					if funHead.MatchString(line) {
+						isStart = true
+
 						funcName = getFuncName(line)
 
-						if len(SlaveFunc[funcName]) != 0 {
+						if SlaveFunc[funcName] != nil {
 							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s", filePath, lineNumber, funcName)
 							redPrint(msg)
 							panic(msg)
@@ -191,20 +218,27 @@ func readSlave() {
 
 						// record func start
 						if SlaveFuncInfo[funcName] == nil {
-							SlaveFuncInfo[funcName] = &MasterInfo{
+							SlaveFuncInfo[funcName] = &FileInfo{
 								lineNumber: lineNumber,
 								file:       filePath,
 							}
 						}
-
-						isStart = true
 						if SlaveFunc[funcName] == nil {
-							SlaveFunc[funcName] = make([]string, 0)
+							fi := make([]FileLineInfo, 0)
+							SlaveFunc[funcName] = &fi
 						}
-						SlaveFunc[funcName] = append(SlaveFunc[funcName], line)
+						*SlaveFunc[funcName] = append(*SlaveFunc[funcName], FileLineInfo{
+							lineNumber: lineNumber,
+							text:       line,
+							file:       filePath,
+						})
 					}
 				} else {
-					SlaveFunc[funcName] = append(SlaveFunc[funcName], line)
+					*SlaveFunc[funcName] = append(*SlaveFunc[funcName], FileLineInfo{
+						lineNumber: lineNumber,
+						text:       line,
+						file:       filePath,
+					})
 
 					if funcFooter.Match([]byte(line)) {
 						isStart = false
@@ -215,28 +249,27 @@ func readSlave() {
 							continue
 						}
 						// 如果主函数和比较的函数不一样
-						if strings.Join(SlaveFunc[funcName], "") == strings.Join(MasterFunc[funcName], "") {
+						if funcIsEqual(*MasterFunc[funcName], *SlaveFunc[funcName]) {
 							funcName = ""
 							continue
 						}
 
-						funcName = ""
-
 						redPrint(funcName + ":" + strings.Repeat("~", 50))
-						for i, lineText := range MasterFunc[funcName] {
-							if i > len(SlaveFunc[funcName]) {
+						fmt.Println("Is compare function: ", funcName)
+						for i, lineText := range *MasterFunc[funcName] {
+							if i >= len(*SlaveFunc[funcName]) {
 								break
 							}
-							if lineText != SlaveFunc[funcName][i] {
-								mfi := MasterFuncInfo[funcName]
-								msg1 := fmt.Sprintf("主: %s, %s, %d", mfi.file, mfi.lineNumber, lineText)
+							sf := *SlaveFunc[funcName]
+							if lineText.text != sf[i].text {
+								msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
 								redPrint(msg1)
-								sfi := SlaveFuncInfo[funcName]
-								msg2 := fmt.Sprintf("从: %s, %s, %d", sfi.file, sfi.lineNumber, SlaveFunc[funcName][i])
-								redPrint(msg2)
-								redPrint(strings.Repeat("...", 20))
+								msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
+								purplePrint(msg2)
 							}
 						}
+						fmt.Println(strings.Repeat("...", 20))
+						funcName = ""
 					}
 				}
 
@@ -261,6 +294,10 @@ func yellowPrint(str string) {
 	fmt.Printf("\033[1;40;33m%s\033[0m\n", str)
 }
 
+func purplePrint(str string) {
+	fmt.Printf("\033[1;40;35m%s\033[0m\n", str)
+}
+
 var (
 	FunHeader, _ = regexp.Compile(`^func ([a-z|A-Z]+)\(`)
 )
@@ -278,4 +315,17 @@ func getDir() string {
 func completePath(filePath string) string {
 	d := getDir()
 	return strings.Join([]string{d, filePath}, "/")
+}
+
+func funcIsEqual(func1, func2 []FileLineInfo) bool {
+	fc := func(v []FileLineInfo) []string {
+		cs := make([]string, 0)
+		for i := 0; i < len(v); i++ {
+			cs = append(cs, v[i].text)
+		}
+		return cs
+	}
+	code1Text := fc(func1)
+	code2Text := fc(func2)
+	return strings.Join(code1Text, "") == strings.Join(code2Text, "")
 }
