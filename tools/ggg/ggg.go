@@ -89,9 +89,9 @@ func main() {
 	readMain()
 	yellowPrint("读取主文件完成...")
 
-	yellowPrint("正在读辅助文件...")
+	yellowPrint("正在读取辅文件...")
 	readSlave()
-	yellowPrint("读取主辅助完成...")
+	yellowPrint("读取辅文件完成...")
 }
 
 func readMain() {
