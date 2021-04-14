@@ -99,18 +99,18 @@ func main() {
 		redPrint("文件未选择")
 		return
 	}
-	yellowPrint("正在读取主文件...")
+	yellowPrint("正在读取主文件...\n")
 	readMain()
-	yellowPrint("读取主文件完成...")
+	yellowPrint("读取主文件完成...\n")
 
-	yellowPrint("正在读取辅文件...")
+	yellowPrint("正在读取辅文件...\n")
 	readSlave()
-	yellowPrint("读取辅文件完成...")
+	yellowPrint("读取辅文件完成...\n")
 
 	for k, _ := range MasterFunc {
 		if len(MasterFuncExist[k]) == 0 {
 			info := MasterFuncInfo[k]
-			msg := fmt.Sprintf("Func未被匹配[%s:%d]: %s", info.file, info.lineNumber, k)
+			msg := fmt.Sprintf("Func未被匹配[%s:%d]: %s\n", info.file, info.lineNumber, k)
 			redPrint(msg)
 		}
 	}
@@ -120,7 +120,7 @@ func main() {
 				yellowPrint(strings.Repeat("~~~", 30))
 			})
 			info := MasterStructInfo[k]
-			msg := fmt.Sprintf("Struct未被匹配[%s:%d]: %s", info.file, info.lineNumber, k)
+			msg := fmt.Sprintf("Struct未被匹配[%s:%d]: %s\n", info.file, info.lineNumber, k)
 			redPrint(msg)
 		}
 	}
@@ -157,7 +157,7 @@ func readMain() {
 						funcName = getFuncName(line)
 
 						if MasterFunc[funcName] != nil {
-							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s", filePath, lineNumber, funcName)
+							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s\n", filePath, lineNumber, funcName)
 							redPrint(msg)
 							panic(msg)
 						}
@@ -196,7 +196,7 @@ func readMain() {
 						structName = getStructName(line)
 
 						if MasterStruct[structName] != nil {
-							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s", filePath, lineNumber, structName)
+							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s\n", filePath, lineNumber, structName)
 							redPrint(msg)
 							panic(msg)
 						}
@@ -297,7 +297,7 @@ func readSlave() {
 						funcName = getFuncName(line)
 
 						if SlaveFunc[funcName] != nil {
-							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s", filePath, lineNumber, funcName)
+							msg := fmt.Sprintf("重复的方法: %s\t%d\t%s\n", filePath, lineNumber, funcName)
 							redPrint(msg)
 							panic(msg)
 						}
@@ -326,7 +326,7 @@ func readSlave() {
 						structName = getStructName(line)
 
 						if SlaveStruct[structName] != nil {
-							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s", filePath, lineNumber, structName)
+							msg := fmt.Sprintf("重复的Struct: %s\t%d\t%s\n", filePath, lineNumber, structName)
 							redPrint(msg)
 							panic(msg)
 						}
@@ -382,7 +382,7 @@ func readSlave() {
 								continue
 							}
 
-							redPrint(funcName + ":" + strings.Repeat("~", 50))
+							redPrint(funcName + ":" + strings.Repeat("~", 50) + "\n")
 							fmt.Println("Is compare function: ", funcName)
 							for i, lineText := range *MasterFunc[funcName] {
 								if i >= len(*SlaveFunc[funcName]) {
@@ -392,7 +392,7 @@ func readSlave() {
 								if lineText.text != sf[i].text {
 									msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
 									redPrint(msg1)
-									msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
+									msg2 := fmt.Sprintf("从[%s:%d]: %s\n", sf[i].file, sf[i].lineNumber, sf[i].text)
 									purplePrint(msg2)
 								}
 							}
@@ -422,7 +422,7 @@ func readSlave() {
 								continue
 							}
 
-							redPrint(structName + ":" + strings.Repeat("~", 50))
+							redPrint(structName + ":" + strings.Repeat("~", 50) + "\n")
 							fmt.Println("Is compare struct: ", structName)
 							for i, lineText := range *MasterStruct[structName] {
 								if i >= len(*SlaveFunc[structName]) {
@@ -432,7 +432,7 @@ func readSlave() {
 								if lineText.text != sf[i].text {
 									msg1 := fmt.Sprintf("主[%s:%d]: %s", lineText.file, lineText.lineNumber, lineText.text)
 									redPrint(msg1)
-									msg2 := fmt.Sprintf("从[%s:%d]: %s", sf[i].file, sf[i].lineNumber, sf[i].text)
+									msg2 := fmt.Sprintf("从[%s:%d]: %s\n", sf[i].file, sf[i].lineNumber, sf[i].text)
 									purplePrint(msg2)
 								}
 							}
@@ -455,15 +455,15 @@ func readSlave() {
 }
 
 func redPrint(str string) {
-	fmt.Printf("\033[0;40;31m%s\033[0m\n", str)
+	fmt.Printf("\033[0;40;31m%s\033[0m", str)
 }
 
 func yellowPrint(str string) {
-	fmt.Printf("\033[1;40;33m%s\033[0m\n", str)
+	fmt.Printf("\033[1;40;33m%s\033[0m", str)
 }
 
 func purplePrint(str string) {
-	fmt.Printf("\033[1;40;35m%s\033[0m\n", str)
+	fmt.Printf("\033[1;40;35m%s\033[0m", str)
 }
 
 var (
