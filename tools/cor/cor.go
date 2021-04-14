@@ -117,7 +117,7 @@ func main() {
 	for k, _ := range MasterStruct {
 		if len(MasterStructExist[k]) == 0 {
 			doPrint.Do(func() {
-				yellowPrint(strings.Repeat("~~~", 30))
+				yellowPrint(strings.Repeat("~~~", 30) + "\n")
 			})
 			info := MasterStructInfo[k]
 			msg := fmt.Sprintf("Struct未被匹配[%s:%d]: %s\n", info.file, info.lineNumber, k)
@@ -168,13 +168,7 @@ func readMain() {
 								file:       filePath,
 							}
 						}
-						// record func start
-						if MasterFuncInfo[funcName] == nil {
-							MasterFuncInfo[funcName] = &FileInfo{
-								lineNumber: lineNumber,
-								file:       filePath,
-							}
-						}
+
 						if MasterFunc[funcName] == nil {
 							fi := make([]FileLineInfo, 0)
 							MasterFunc[funcName] = &fi
@@ -207,13 +201,7 @@ func readMain() {
 								file:       filePath,
 							}
 						}
-						// record func start
-						if MasterStructInfo[structName] == nil {
-							MasterStructInfo[structName] = &FileInfo{
-								lineNumber: lineNumber,
-								file:       filePath,
-							}
-						}
+
 						if MasterStruct[structName] == nil {
 							fi := make([]FileLineInfo, 0)
 							MasterStruct[structName] = &fi
@@ -330,24 +318,19 @@ func readSlave() {
 							panic(msg)
 						}
 
-						// record func start
+						// record struct start
 						if SlaveStructInfo[structName] == nil {
 							SlaveStructInfo[structName] = &FileInfo{
 								lineNumber: lineNumber,
 								file:       filePath,
 							}
 						}
-						// record func start
-						if SlaveStructInfo[structName] == nil {
-							SlaveStructInfo[structName] = &FileInfo{
-								lineNumber: lineNumber,
-								file:       filePath,
-							}
-						}
+
 						if SlaveStruct[structName] == nil {
 							fi := make([]FileLineInfo, 0)
 							SlaveStruct[structName] = &fi
 						}
+
 						*SlaveStruct[structName] = append(*SlaveStruct[structName], FileLineInfo{
 							lineNumber: lineNumber,
 							text:       line,
