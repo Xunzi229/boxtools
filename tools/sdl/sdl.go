@@ -7,7 +7,10 @@ import (
 	"github.com/urfave/cli/v2"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -23,8 +26,8 @@ var app = &cli.App{}
 func init() {
 	app = &cli.App{
 		Name:      "史上最快查找重复文件、删除多余文件",
-		UsageText: "筛选删除文件",
-		Version:   "v0.0.1",
+		UsageText: "查找重复文件, 删除重复文件",
+		Version:   "v0.0.2",
 		Commands:  nil,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -32,7 +35,7 @@ func init() {
 				Value:       "",
 				Destination: &dir,
 				Aliases:     []string{"d"},
-				Usage:       "选择目录,绝对路径",
+				Usage:       "选择目录,绝对路径 ",
 			},
 			&cli.StringFlag{
 				Name:        "delete",
@@ -47,7 +50,7 @@ func init() {
 				Value:       "",
 				Destination: &needFilter,
 				Aliases:     []string{"f"},
-				Usage:       "需要过滤相关文件: -f .jpg",
+				Usage:       "需要过滤相关文件: -f .jpg 多个文件使用`,`隔开",
 			},
 		},
 		Authors: []*cli.Author{
@@ -87,11 +90,16 @@ var (
 
 func main() {
 	if file, err := os.Stat(dir); err != nil || !file.IsDir() {
-		msg := fmt.Sprintf("\n无效目录 \n\t %v \n\t dir: %s", err, dir)
-		redPrint(msg)
+		dir = completePath(dir)
 
-		os.Exit(0)
+		if file, err := os.Stat(dir); err != nil || !file.IsDir() {
+			msg := fmt.Sprintf("\n无效目录 \n\t %v \n\t dir: %s", err, dir)
+			redPrint(msg)
+
+			os.Exit(0)
+		}
 	}
+	dir = formatPath(dir)
 
 	needFilters = strings.Split(needFilter, ",")
 
@@ -133,6 +141,8 @@ func yellowPrint(str string) {
 }
 
 func traverseDir(dirPth string) {
+	yellowPrint("正在扫描文件夹..." + dirPth)
+
 	dirMux.Add(1)
 	defer dirMux.Done()
 
@@ -144,7 +154,8 @@ func traverseDir(dirPth string) {
 	pthSep := string(os.PathSeparator)
 	for _, fi := range dirPath {
 		if fi.IsDir() { // 判断是否是目录， 进行递归
-			go traverseDir(dirPth + pthSep + fi.Name())
+			path := formatPath(dirPth + pthSep + fi.Name())
+			go traverseDir(path)
 		} else {
 			fileName := fmt.Sprintf("%s%s%s", dirPth, pthSep, fi.Name())
 			if len(needFilter) > 0 && isNeedFilter(needFilters, fileName) {
@@ -209,4 +220,28 @@ func calcMd5(filename string) (string, int64) {
 func calcSize(file *os.File) int64 {
 	fi, _ := file.Stat()
 	return fi.Size()
+}
+
+func getDir() string {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.Replace(dir, "\\", "/", -1)
+}
+
+func completePath(filePath string) string {
+	d := getDir()
+	filePath = strings.Join([]string{d, filePath}, "/")
+	return formatPath(filePath)
+}
+
+func formatPath(path string) string {
+	path = strings.Replace(path, "\\", "/", -1)
+	reg, _ := regexp.Compile("/$")
+	if reg.MatchString(path) {
+		path = path[:len(path)-1]
+	}
+
+	return strings.Replace(path, "//", "/", -1)
 }
