@@ -38,19 +38,18 @@ func init() {
 				Usage:       "选择目录,绝对路径 ",
 			},
 			&cli.StringFlag{
-				Name:        "delete",
-				Value:       "N",
-				Destination: &isDelete,
-				Aliases:     []string{"dl"},
-				Usage:       "是否自动删除重复的文件(Y/N)： -dl Y",
-			},
-
-			&cli.StringFlag{
 				Name:        "filter",
 				Value:       "",
 				Destination: &needFilter,
 				Aliases:     []string{"f"},
 				Usage:       "需要过滤相关文件: -f .jpg 多个文件使用`,`隔开",
+			},
+			&cli.StringFlag{
+				Name:        "delete",
+				Value:       "N",
+				Destination: &isDelete,
+				Aliases:     []string{"dl"},
+				Usage:       "是否自动删除重复的文件(Y/N)： -dl Y",
 			},
 		},
 		Authors: []*cli.Author{
