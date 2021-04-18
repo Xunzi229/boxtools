@@ -82,9 +82,10 @@ type File struct {
 var (
 	ch          = make(chan string, 100)
 	repeat      = make(map[string][]*File)
+	repeatMutex = sync.RWMutex{}
 	mux         = sync.WaitGroup{}
+	done        = make(chan bool)
 	dirMux      = sync.WaitGroup{}
-	th          = make(chan bool, 1)
 	needFilters []string
 )
 
@@ -105,9 +106,11 @@ func main() {
 
 	go loopCenter()
 	traverseDir(dir)
-	dirMux.Wait()
 	mux.Wait()
+	dirMux.Wait()
+	done <- true
 
+	repeatMutex.RLock()
 	for k, fs := range repeat {
 		if len(fs) <= 1 {
 			continue
@@ -130,6 +133,7 @@ func main() {
 
 		fmt.Println(strings.Repeat("-", 60) + "\n")
 	}
+	repeatMutex.RUnlock()
 }
 
 func redPrint(str string) {
@@ -179,12 +183,14 @@ func loopCenter() {
 	for {
 		select {
 		case f := <-ch:
+			f = formatPath(f)
 			mux.Add(1)
-			go func() {
+			func() {
 				defer mux.Done()
-				fmt.Println("正在计算中...", f)
 				parallel(f)
 			}()
+		case <-done:
+			return
 		}
 	}
 }
@@ -194,7 +200,9 @@ func parallel(fp string) {
 	if len(m) == 0 || size == 0 {
 		return
 	}
-	th <- true
+	fmt.Println("正在计算中...", fp)
+
+	repeatMutex.Lock()
 	if repeat[m] == nil {
 		repeat[m] = make([]*File, 0)
 	}
@@ -203,7 +211,7 @@ func parallel(fp string) {
 		size: size,
 		md5:  m,
 	})
-	<-th
+	repeatMutex.Unlock()
 }
 
 func calcMd5(filename string) (string, int64) {
@@ -245,6 +253,8 @@ func formatPath(path string) string {
 	if reg.MatchString(path) {
 		path = path[:len(path)-1]
 	}
+
+	path = strings.Replace(path, "\\", "/", -1)
 
 	return strings.Replace(path, "//", "/", -1)
 }
