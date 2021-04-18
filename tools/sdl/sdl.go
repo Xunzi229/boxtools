@@ -160,7 +160,7 @@ func traverseDir(dirPth string) {
 		} else {
 			fileName := fmt.Sprintf("%s%s%s", dirPth, pthSep, fi.Name())
 			if len(needFilter) > 0 && isNeedFilter(needFilters, fileName) {
-				mux.Add(1)
+
 				ch <- fileName
 			}
 		}
@@ -180,13 +180,16 @@ func loopCenter() {
 	for {
 		select {
 		case f := <-ch:
-			go parallel(f)
+			mux.Add(1)
+			go func() {
+				defer mux.Done()
+				parallel(f)
+			}()
 		}
 	}
 }
 
 func parallel(fp string) {
-	defer mux.Done()
 
 	m, size := calcMd5(fp)
 	if len(m) == 0 || size == 0 {
