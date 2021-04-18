@@ -148,7 +148,8 @@ func traverseDir(dirPth string) {
 
 	dirPath, err := ioutil.ReadDir(dirPth)
 	if err != nil {
-		panic(err)
+		redPrint(err.Error())
+		return
 	}
 
 	pthSep := string(os.PathSeparator)
