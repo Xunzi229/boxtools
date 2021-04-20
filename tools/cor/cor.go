@@ -19,21 +19,16 @@ import (
 
 var (
 	// funcName => funcLineText
-
-	MasterFunc     = map[string]*[]FileLineInfo{}
-	MasterFuncInfo = map[string]*FileInfo{}
-
-	SlaveFunc     = map[string]*[]FileLineInfo{}
-	SlaveFuncInfo = map[string]*FileInfo{}
-
+	MasterFunc      = map[string]*[]FileLineInfo{}
+	MasterFuncInfo  = map[string]*FileInfo{}
+	SlaveFunc       = map[string]*[]FileLineInfo{}
+	SlaveFuncInfo   = map[string]*FileInfo{}
 	MasterFuncExist = map[string]string{}
 
-	MasterStruct     = map[string]*[]FileLineInfo{}
-	MasterStructInfo = map[string]*FileInfo{}
-
-	SlaveStruct     = map[string]*[]FileLineInfo{}
-	SlaveStructInfo = map[string]*FileInfo{}
-
+	MasterStruct      = map[string]*[]FileLineInfo{}
+	MasterStructInfo  = map[string]*FileInfo{}
+	SlaveStruct       = map[string]*[]FileLineInfo{}
+	SlaveStructInfo   = map[string]*FileInfo{}
 	MasterStructExist = map[string]string{}
 
 	mainFile      string
@@ -355,6 +350,7 @@ func readSlave() {
 								funcName = ""
 								continue
 							}
+							fmt.Println("正在比较... func", funcName)
 
 							MasterFuncExist[funcName] = funcName
 
@@ -395,6 +391,7 @@ func readSlave() {
 								structName = ""
 								continue
 							}
+							fmt.Printf("正在比较... type %s struct\n", structName)
 
 							MasterStructExist[structName] = structName
 
