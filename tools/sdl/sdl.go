@@ -41,14 +41,12 @@ func init() {
 			},
 			&cli.StringFlag{
 				Name:        "filter",
-				Value:       "",
 				Destination: &needFilter,
 				Aliases:     []string{"f"},
 				Usage:       "需要过滤相关文件: -f .jpg 多个文件使用`,`隔开",
 			},
 			&cli.StringFlag{
 				Name:        "select",
-				Value:       "",
 				Destination: &onlyFile,
 				Aliases:     []string{"s"},
 				Usage:       "需要选择相关文件: -s .jpg 多个文件使用`,`隔开, 优先使用过滤",
@@ -270,18 +268,30 @@ func process(fp string) {
 	repeatMutex.Unlock()
 }
 
+var (
+	pFile = sync.Pool{
+		New: func() interface{} {
+			return &os.File{}
+		},
+	}
+)
+
 func calcMd5(filename string) (string, int64) {
-	pFile, err := os.Open(filename)
+	var err error
+	var pf = pFile.Get().(*os.File)
+	pf, err = os.Open(filename)
 	if err != nil {
 		_ = fmt.Errorf("failed to open file，filename=%v, err=%v", filename, err)
 		return "", 0
 	}
-	defer pFile.Close()
+
+	defer pFile.Put(pf)
+	defer pf.Close()
 
 	md5h := md5.New()
-	_, _ = io.Copy(md5h, pFile)
+	_, _ = io.Copy(md5h, pf)
 
-	return hex.EncodeToString(md5h.Sum(nil)), calcSize(pFile)
+	return hex.EncodeToString(md5h.Sum(nil)), calcSize(pf)
 }
 
 func calcSize(file *os.File) int64 {
