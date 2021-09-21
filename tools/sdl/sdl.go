@@ -1,6 +1,7 @@
 package main
 
 import (
+	"boxtools/library/mgroup"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -19,6 +20,7 @@ var (
 	dir        string
 	isDelete   string
 	needFilter string
+	onlyFile   string
 )
 
 var app = &cli.App{}
@@ -43,6 +45,13 @@ func init() {
 				Destination: &needFilter,
 				Aliases:     []string{"f"},
 				Usage:       "需要过滤相关文件: -f .jpg 多个文件使用`,`隔开",
+			},
+			&cli.StringFlag{
+				Name:        "select",
+				Value:       "",
+				Destination: &onlyFile,
+				Aliases:     []string{"s"},
+				Usage:       "需要选择相关文件: -s .jpg 多个文件使用`,`隔开, 优先使用过滤",
 			},
 			&cli.StringFlag{
 				Name:        "delete",
@@ -79,13 +88,13 @@ type File struct {
 }
 
 var (
-	ch          = make(chan string, 100)
 	repeat      = make(map[string][]*File)
 	repeatMutex = sync.RWMutex{}
-	mux         = sync.WaitGroup{}
 	done        = make(chan bool)
-	dirMux      = sync.WaitGroup{}
 	needFilters []string
+	onlyFiles   []string
+	groupFile   = &mgroup.Group{}
+	groupDir    = &mgroup.Group{}
 )
 
 func main() {
@@ -102,11 +111,21 @@ func main() {
 	dir = formatPath(dir)
 
 	needFilters = strings.Split(needFilter, ",")
+	onlyFiles = strings.Split(onlyFile, ",")
 
+	// 并发处理文件
+	groupFile.Ch = make(chan int8, 5)
+
+	// 数据处理中心
 	go loopCenter()
-	traverseDir(dir)
-	mux.Wait()
-	dirMux.Wait()
+	go loopDirCenter()
+
+	// 原始的DIR
+	groupDir.Add(dir)
+
+	groupDir.Wait()
+	groupFile.Wait()
+
 	done <- true
 
 	repeatMutex.RLock()
@@ -146,9 +165,6 @@ func yellowPrint(str string) {
 func traverseDir(dirPth string) {
 	yellowPrint("正在扫描文件夹..." + dirPth)
 
-	dirMux.Add(1)
-	defer dirMux.Done()
-
 	dirPath, err := ioutil.ReadDir(dirPth)
 	if err != nil {
 		redPrint(err.Error())
@@ -159,17 +175,24 @@ func traverseDir(dirPth string) {
 	for _, fi := range dirPath {
 		if fi.IsDir() { // 判断是否是目录， 进行递归
 			path := formatPath(dirPth + pthSep + fi.Name())
-			go traverseDir(path)
+			groupDir.Add(path)
 		} else {
 			fileName := fmt.Sprintf("%s%s%s", dirPth, pthSep, fi.Name())
-			if len(needFilter) > 0 && isNeedFilter(needFilters, fileName) {
-				ch <- fileName
+
+			// 不存在处在筛选中的文件
+			if len(needFilter) > 0 && !isExist(needFilters, fileName) {
+				groupFile.Add(fileName)
+				continue
+			}
+			// 处在筛选中的文件
+			if len(onlyFiles) > 0 && isExist(onlyFiles, fileName) {
+				groupFile.Add(fileName)
 			}
 		}
 	}
 }
 
-func isNeedFilter(pax []string, fp string) bool {
+func isExist(pax []string, fp string) bool {
 	for _, p := range pax {
 		if strings.HasSuffix(strings.ToLower(fp), strings.ToLower(p)) {
 			return true
@@ -178,23 +201,57 @@ func isNeedFilter(pax []string, fp string) bool {
 	return false
 }
 
-func loopCenter() {
+func loopDirCenter() {
 	for {
 		select {
-		case f := <-ch:
-			f = formatPath(f)
-			mux.Add(1)
-			func() {
-				defer mux.Done()
-				parallel(f)
-			}()
 		case <-done:
 			return
+		default:
+			groupDir.Do(func(item string) {
+				traverseDir(item)
+			})
+			//for _, f := range groupDir.Load() {
+			//	func(d string) {
+			//		defer groupDir.Done()
+			//		traverseDir(d)
+			//	}(f)
+			//}
 		}
 	}
 }
 
-func parallel(fp string) {
+func loopCenter() {
+	for {
+		select {
+		//case f := <-ch:
+		//	f = formatPath(f)
+		//	mux.Add(1)
+		//	func() {
+		//		defer mux.Done()
+		//		parallel(f)
+		//	}()
+		case <-done:
+			return
+		default:
+			groupFile.Do(func(item string) {
+				item = formatPath(item)
+				process(item)
+			})
+			//for _, f := range groupFile.Load() {
+			//	f = formatPath(f)
+			//
+			//	//mux.Add(1)
+			//	func(fs string) {
+			//		//defer mux.Done()
+			//		defer groupFile.Done()
+			//		process(fs)
+			//	}(f)
+			//}
+		}
+	}
+}
+
+func process(fp string) {
 	m, size := calcMd5(fp)
 	if len(m) == 0 || size == 0 {
 		return
@@ -216,7 +273,7 @@ func parallel(fp string) {
 func calcMd5(filename string) (string, int64) {
 	pFile, err := os.Open(filename)
 	if err != nil {
-		_ = fmt.Errorf("打开文件失败，filename=%v, err=%v", filename, err)
+		_ = fmt.Errorf("failed to open file，filename=%v, err=%v", filename, err)
 		return "", 0
 	}
 	defer pFile.Close()
