@@ -278,12 +278,9 @@ func calcMd5(filename string) (string, int64) {
 	md5h := md5.New()
 	_, _ = io.Copy(md5h, pf)
 
-	return hex.EncodeToString(md5h.Sum(nil)), calcSize(pf)
-}
+	fi, _ := pf.Stat()
 
-func calcSize(file *os.File) int64 {
-	fi, _ := file.Stat()
-	return fi.Size()
+	return hex.EncodeToString(md5h.Sum(nil)), fi.Size()
 }
 
 func getDir() string {
