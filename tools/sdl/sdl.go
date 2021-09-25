@@ -86,21 +86,22 @@ type File struct {
 }
 
 var (
-	repeat      = make(map[string][]*File)
+	dataSet     = make(map[string][]*File)
 	repeatMutex = sync.RWMutex{}
 	done        = make(chan bool)
 	needFilters []string
 	onlyFiles   []string
 	groupFile   = &mgroup.Group{}
 	groupDir    = &mgroup.Group{}
+	maxParallel = make(chan int, 5)
 )
 
 func main() {
 	if file, err := os.Stat(dir); err != nil || !file.IsDir() {
 		dir = completePath(dir)
 
-		if file, err := os.Stat(dir); err != nil || !file.IsDir() {
-			msg := fmt.Sprintf("\n无效目录 \n\t %v \n\t dir: %s", err, dir)
+		if fileX, errX := os.Stat(dir); errX != nil || !fileX.IsDir() {
+			msg := fmt.Sprintf("\n无效目录 \n\t %v \n\t dir: %s", errX, dir)
 			redPrint(msg)
 
 			os.Exit(0)
@@ -127,7 +128,8 @@ func main() {
 	done <- true
 
 	repeatMutex.RLock()
-	for k, fs := range repeat {
+	defer repeatMutex.RUnlock()
+	for k, fs := range dataSet {
 		if len(fs) <= 1 {
 			continue
 		}
@@ -149,7 +151,7 @@ func main() {
 
 		fmt.Println(strings.Repeat("-", 60) + "\n")
 	}
-	repeatMutex.RUnlock()
+
 }
 
 func redPrint(str string) {
@@ -208,12 +210,6 @@ func loopDirCenter() {
 			groupDir.Do(func(item string) {
 				traverseDir(item)
 			})
-			//for _, f := range groupDir.Load() {
-			//	func(d string) {
-			//		defer groupDir.Done()
-			//		traverseDir(d)
-			//	}(f)
-			//}
 		}
 	}
 }
@@ -221,51 +217,42 @@ func loopDirCenter() {
 func loopCenter() {
 	for {
 		select {
-		//case f := <-ch:
-		//	f = formatPath(f)
-		//	mux.Add(1)
-		//	func() {
-		//		defer mux.Done()
-		//		parallel(f)
-		//	}()
 		case <-done:
 			return
 		default:
 			groupFile.Do(func(item string) {
-				item = formatPath(item)
-				process(item)
+				maxParallel <- 1
+				go func() {
+					defer func() {
+						<-maxParallel
+					}()
+
+					item = formatPath(item)
+					process(item)
+				}()
 			})
-			//for _, f := range groupFile.Load() {
-			//	f = formatPath(f)
-			//
-			//	//mux.Add(1)
-			//	func(fs string) {
-			//		//defer mux.Done()
-			//		defer groupFile.Done()
-			//		process(fs)
-			//	}(f)
-			//}
 		}
 	}
 }
 
 func process(fp string) {
+	fmt.Println("正在计算中...", fp)
 	m, size := calcMd5(fp)
 	if len(m) == 0 || size == 0 {
 		return
 	}
-	fmt.Println("正在计算中...", fp)
 
 	repeatMutex.Lock()
-	if repeat[m] == nil {
-		repeat[m] = make([]*File, 0)
+	defer repeatMutex.Unlock()
+
+	if dataSet[m] == nil {
+		dataSet[m] = make([]*File, 0)
 	}
-	repeat[m] = append(repeat[m], &File{
+	dataSet[m] = append(dataSet[m], &File{
 		path: fp,
 		size: size,
 		md5:  m,
 	})
-	repeatMutex.Unlock()
 }
 
 var (
