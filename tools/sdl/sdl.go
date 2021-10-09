@@ -2,6 +2,7 @@ package main
 
 import (
 	"boxtools/library/mgroup"
+	"bufio"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -274,9 +275,10 @@ func calcMd5(filename string) (string, int64) {
 
 	defer pFile.Put(pf)
 	defer pf.Close()
+	r := bufio.NewReader(pf)
 
 	md5h := md5.New()
-	_, _ = io.Copy(md5h, pf)
+	_, _ = io.Copy(md5h, r)
 
 	fi, _ := pf.Stat()
 
